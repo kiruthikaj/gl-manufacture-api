@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"from app.models import *; print\\('All imports OK'\\)\")"
+    ]
+  }
+}
