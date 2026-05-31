@@ -5,8 +5,7 @@ from app.models.supplier import (
     PaymentTerms,
     Supplier,
     SupplierStatus,
-    SupplyCategory,
-    supplier_category_association,
+    supplier_raw_category_association,
 )
 
 # Raw-material domain
@@ -40,8 +39,7 @@ __all__ = [
     "TimestampMixin",
     # Supplier
     "Supplier",
-    "SupplyCategory",
-    "supplier_category_association",
+    "supplier_raw_category_association",
     "PaymentTerms",
     "SupplierStatus",
     # Raw materials

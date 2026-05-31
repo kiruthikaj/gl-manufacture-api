@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import uuid
-
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.raw_material import RawMaterial, RawMaterialCategory
@@ -27,18 +25,6 @@ class RawMaterialCategoryRepository(BaseRepository[RawMaterialCategory]):
             RawMaterialCategory.category_name == name
         )
         return self.db.scalars(stmt).first()
-
-    def get_low_stock(self) -> list[RawMaterialCategory]:
-        """
-        Return categories where available quantity has dropped below the
-        minimum required quantity (both columns must be non-null).
-        """
-        stmt = select(RawMaterialCategory).where(
-            RawMaterialCategory.available_qty.is_not(None),
-            RawMaterialCategory.min_required_qty.is_not(None),
-            RawMaterialCategory.available_qty < RawMaterialCategory.min_required_qty,
-        )
-        return list(self.db.scalars(stmt).all())
 
 
 class RawMaterialRepository(BaseRepository[RawMaterial]):
@@ -68,12 +54,12 @@ class RawMaterialRepository(BaseRepository[RawMaterial]):
         return list(self.db.scalars(stmt).all())
 
     def get_by_category(
-        self, category_id: uuid.UUID, *, skip: int = 0, limit: int = 100
+        self, category_code: str, *, skip: int = 0, limit: int = 100
     ) -> list[RawMaterial]:
         """Return all materials belonging to a category."""
         stmt = (
             select(RawMaterial)
-            .where(RawMaterial.category_id == category_id)
+            .where(RawMaterial.category_code == category_code)
             .offset(skip)
             .limit(limit)
         )
@@ -106,6 +92,13 @@ class RawMaterialRepository(BaseRepository[RawMaterial]):
         )
         return list(self.db.scalars(stmt).all())
 
-    def update_stock(self, id: uuid.UUID, quantity: float) -> RawMaterial | None:
+    def exists(self, material_code: str) -> bool:
+        """Return True if a raw material with this material_code exists."""
+        stmt = select(func.count()).select_from(RawMaterial).where(
+            RawMaterial.material_code == material_code
+        )
+        return (self.db.scalar(stmt) or 0) > 0
+
+    def update_stock(self, material_code: str, quantity: float) -> RawMaterial | None:
         """Directly set ``available_quantity`` for the given material."""
-        return self.update(id, {"available_quantity": quantity})
+        return self.update(material_code, {"available_quantity": quantity})

@@ -1,14 +1,14 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, String, Table, Text, Uuid
+from sqlalchemy import Column, Enum, ForeignKey, String, Table, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 
 
 class PaymentTerms(str, enum.Enum):
-    COD = "COD"          # Cash on Delivery
+    COD = "COD"
     ADVANCE = "Advance"
     NET_15 = "Net 15"
     NET_30 = "Net 30"
@@ -22,9 +22,9 @@ class SupplierStatus(str, enum.Enum):
     ON_HOLD = "On Hold"
 
 
-# Association table — Supplier ↔ SupplyCategory (many-to-many)
-supplier_category_association = Table(
-    "supplier_category",
+# Association table — Supplier ↔ RawMaterialCategory (many-to-many)
+supplier_raw_category_association = Table(
+    "supplier_raw_material_category",
     Base.metadata,
     Column(
         "supplier_id",
@@ -33,33 +33,12 @@ supplier_category_association = Table(
         primary_key=True,
     ),
     Column(
-        "category_id",
-        Uuid(as_uuid=True),
-        ForeignKey("supply_categories.id"),
+        "raw_category_code",
+        String(20),
+        ForeignKey("raw_material_categories.raw_category_code"),
         primary_key=True,
     ),
 )
-
-
-class SupplyCategory(Base):
-    """Lookup table for supply categories (e.g. Dairy, Fruits, Packaging)."""
-
-    __tablename__ = "supply_categories"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-
-    suppliers: Mapped[list["Supplier"]] = relationship(
-        "Supplier",
-        secondary=supplier_category_association,
-        back_populates="supply_categories",
-    )
-
-    def __repr__(self) -> str:
-        return f"<SupplyCategory id={self.id} name={self.name!r}>"
 
 
 class Supplier(Base, TimestampMixin):
@@ -77,12 +56,12 @@ class Supplier(Base, TimestampMixin):
 
     # Contact details
     contact_person: Mapped[str] = mapped_column(String(150), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), nullable=False)        # primary telephone
+    phone: Mapped[str] = mapped_column(String(20), nullable=False)
     telephone_2: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(254), nullable=True)
 
     # Address
-    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     city: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Terms & status
@@ -98,9 +77,9 @@ class Supplier(Base, TimestampMixin):
     updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
 
     # Relationships
-    supply_categories: Mapped[list[SupplyCategory]] = relationship(
-        "SupplyCategory",
-        secondary=supplier_category_association,
+    raw_material_categories: Mapped[list["RawMaterialCategory"]] = relationship(
+        "RawMaterialCategory",
+        secondary=supplier_raw_category_association,
         back_populates="suppliers",
     )
     purchase_orders: Mapped[list["PurchaseOrder"]] = relationship(

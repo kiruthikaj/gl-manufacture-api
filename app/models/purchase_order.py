@@ -66,8 +66,8 @@ class PurchaseOrderItem(Base):
     order_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("purchase_orders.id"), nullable=False
     )
-    material_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("raw_materials.id"), nullable=False
+    material_id: Mapped[str] = mapped_column(
+        String(20), ForeignKey("raw_materials.material_code"), nullable=False
     )
     quantity: Mapped[Decimal | None] = mapped_column(Numeric(12, 3), nullable=True)
     unit_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)

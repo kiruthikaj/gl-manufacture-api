@@ -5,29 +5,9 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.supplier import Supplier, SupplierStatus, SupplyCategory
+from app.models.raw_material import RawMaterialCategory
+from app.models.supplier import Supplier, SupplierStatus
 from app.repositories.base import BaseRepository
-
-
-class SupplyCategoryRepository(BaseRepository[SupplyCategory]):
-
-    def __init__(self, db: Session) -> None:
-        super().__init__(SupplyCategory, db)
-
-    def get_by_name(self, name: str) -> SupplyCategory | None:
-        """Return the category whose name matches exactly, or ``None``."""
-        stmt = select(SupplyCategory).where(SupplyCategory.name == name)
-        return self.db.scalars(stmt).first()
-
-    def get_by_name_ilike(self, fragment: str, *, skip: int = 0, limit: int = 100) -> list[SupplyCategory]:
-        """Case-insensitive partial match on category name."""
-        stmt = (
-            select(SupplyCategory)
-            .where(SupplyCategory.name.ilike(f"%{fragment}%"))
-            .offset(skip)
-            .limit(limit)
-        )
-        return list(self.db.scalars(stmt).all())
 
 
 class SupplierRepository(BaseRepository[Supplier]):
@@ -75,7 +55,9 @@ class SupplierRepository(BaseRepository[Supplier]):
         )
         return list(self.db.scalars(stmt).all())
 
-    def get_by_payment_terms(self, terms: str, *, skip: int = 0, limit: int = 100) -> list[Supplier]:
+    def get_by_payment_terms(
+        self, terms: str, *, skip: int = 0, limit: int = 100
+    ) -> list[Supplier]:
         """Return suppliers who operate under the given payment terms."""
         stmt = (
             select(Supplier)
@@ -89,24 +71,28 @@ class SupplierRepository(BaseRepository[Supplier]):
     # Many-to-many helpers                                                 #
     # ------------------------------------------------------------------ #
 
-    def add_category(self, supplier_id: uuid.UUID, category_id: uuid.UUID) -> Supplier | None:
-        """Link a supply category to a supplier. Returns updated supplier."""
+    def add_category(
+        self, supplier_id: uuid.UUID, raw_category_code: str
+    ) -> Supplier | None:
+        """Link a raw material category to a supplier. Returns updated supplier."""
         supplier = self.get_by_id(supplier_id)
-        category = self.db.get(SupplyCategory, category_id)
+        category = self.db.get(RawMaterialCategory, raw_category_code)
         if supplier is None or category is None:
             return None
-        if category not in supplier.supply_categories:
-            supplier.supply_categories.append(category)
+        if category not in supplier.raw_material_categories:
+            supplier.raw_material_categories.append(category)
             self.db.flush()
         return supplier
 
-    def remove_category(self, supplier_id: uuid.UUID, category_id: uuid.UUID) -> Supplier | None:
-        """Unlink a supply category from a supplier. Returns updated supplier."""
+    def remove_category(
+        self, supplier_id: uuid.UUID, raw_category_code: str
+    ) -> Supplier | None:
+        """Unlink a raw material category from a supplier. Returns updated supplier."""
         supplier = self.get_by_id(supplier_id)
-        category = self.db.get(SupplyCategory, category_id)
+        category = self.db.get(RawMaterialCategory, raw_category_code)
         if supplier is None or category is None:
             return None
-        if category in supplier.supply_categories:
-            supplier.supply_categories.remove(category)
+        if category in supplier.raw_material_categories:
+            supplier.raw_material_categories.remove(category)
             self.db.flush()
         return supplier

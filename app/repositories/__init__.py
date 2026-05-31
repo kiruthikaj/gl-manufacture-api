@@ -1,7 +1,7 @@
 from app.repositories.base import BaseRepository
 
 # Supplier domain
-from app.repositories.supplier import SupplierRepository, SupplyCategoryRepository
+from app.repositories.supplier import SupplierRepository
 
 # Raw-material domain
 from app.repositories.raw_material import (
@@ -34,7 +34,6 @@ __all__ = [
     "BaseRepository",
     # Supplier
     "SupplierRepository",
-    "SupplyCategoryRepository",
     # Raw materials
     "RawMaterialRepository",
     "RawMaterialCategoryRepository",

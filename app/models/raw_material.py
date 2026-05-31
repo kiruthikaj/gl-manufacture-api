@@ -1,9 +1,7 @@
 import enum
-import uuid
-from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Date, Enum, ForeignKey, Numeric, String, Text, Uuid
+from sqlalchemy import Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -30,26 +28,25 @@ class RawMaterialCategory(Base):
 
     __tablename__ = "raw_material_categories"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    # Short business code, e.g. "DAI", "GRN"
-    raw_category_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    # Short business code is the natural PK, e.g. "DAI", "GRN"
+    raw_category_code: Mapped[str] = mapped_column(String(20), primary_key=True)
     category_name: Mapped[str] = mapped_column(String(50), nullable=False)
     primary_descriptor: Mapped[str | None] = mapped_column(Text, nullable=True)
-    available_qty: Mapped[Decimal | None] = mapped_column(Numeric(12, 3), nullable=True)
-    available_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    min_required_qty: Mapped[Decimal | None] = mapped_column(Numeric(12, 3), nullable=True)
 
     # Relationships
     raw_materials: Mapped[list["RawMaterial"]] = relationship(
         "RawMaterial", back_populates="category"
     )
+    suppliers: Mapped[list["Supplier"]] = relationship(
+        "Supplier",
+        secondary="supplier_raw_material_category",
+        back_populates="raw_material_categories",
+    )
 
     def __repr__(self) -> str:
         return (
-            f"<RawMaterialCategory id={self.id} "
-            f"code={self.raw_category_code!r} name={self.category_name!r}>"
+            f"<RawMaterialCategory code={self.raw_category_code!r} "
+            f"name={self.category_name!r}>"
         )
 
 
@@ -58,18 +55,18 @@ class RawMaterial(Base, TimestampMixin):
 
     __tablename__ = "raw_materials"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    category_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("raw_material_categories.id"),
+    material_code: Mapped[str] = mapped_column(String(20), primary_key=True)
+    category_code: Mapped[str | None] = mapped_column(
+        String(20),
+        ForeignKey("raw_material_categories.raw_category_code"),
         nullable=True,
     )
     material_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     min_order_qty: Mapped[Decimal | None] = mapped_column(Numeric(12, 3), nullable=True)
-    min_required_qty: Mapped[Decimal | None] = mapped_column(Numeric(12, 3), nullable=True)
+    min_required_qty: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 3), nullable=True
+    )
     available_quantity: Mapped[Decimal] = mapped_column(
         Numeric(12, 3), nullable=False, default=0
     )
@@ -88,6 +85,6 @@ class RawMaterial(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return (
-            f"<RawMaterial id={self.id} name={self.material_name!r} "
+            f"<RawMaterial material_code={self.material_code} name={self.material_name!r} "
             f"qty={self.available_quantity} {self.unit}>"
         )
