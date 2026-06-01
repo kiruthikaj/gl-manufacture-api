@@ -55,9 +55,48 @@ Edit `.env` and set at minimum:
 
 | Variable | Description |
 |---|---|
+| `DATABASE_URL` | PostgreSQL connection string — see format below |
 | `SECRET_KEY` | Long random string used for token signing |
 | `ALLOWED_ORIGINS` | JSON array of allowed frontend origins |
 | `DEBUG` | `true` to enable `/docs`, `/redoc`, `/openapi.json` |
+
+**Setting `DATABASE_URL`**
+
+The connection string follows this format:
+
+```
+postgresql+psycopg2://<username>:<password>@<host>:<port>/<database_name>
+```
+
+Replace each placeholder with your PostgreSQL details:
+
+| Placeholder | What to put here |
+|---|---|
+| `<username>` | The PostgreSQL login name (e.g. `postgres`) |
+| `<password>` | The password for that login |
+| `<host>` | Where the database is running — use `localhost` if it is on your machine |
+| `<port>` | The port PostgreSQL listens on — default is `5432` |
+| `<database_name>` | The name of the database created for this project |
+
+Example:
+
+```
+DATABASE_URL=postgresql+psycopg2://postgres:mysecretpassword@localhost:5432/gl_transfer
+```
+
+## Database Migrations
+
+Migrations are managed with [Alembic](https://alembic.sqlalchemy.org/). Run these from the project root with your virtual environment active.
+
+**Apply all pending migrations (do this after every pull)**
+
+```bash
+alembic upgrade head
+```
+
+> If you see an error like `FATAL: database does not exist`, make sure the database named in `DATABASE_URL` has been created in PostgreSQL before running migrations.
+
+---
 
 ## Running
 
